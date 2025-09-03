@@ -80,6 +80,9 @@ app.get("/qr-login", async (req, res) => {
   }
 });
 
+app.listen(3000, () => console.log("Server ready on port 3000."));
+
+module.exports = app;
 
 async function updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy) {
   const url = `https://auto.miasolution.vn/rest/credentials/${credentialId}`;
