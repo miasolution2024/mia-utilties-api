@@ -7,7 +7,7 @@ require("dotenv").config();
 
 const app = express();
 app.use(cors());
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 const credentialId = process.env.CREDENTIAL_ID || "Pb7ykVjDjlguRbHv";
 const n8nCookie = process.env.N8N_COOKIE;
 const browserId = process.env.BROWSER_ID;
