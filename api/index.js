@@ -82,7 +82,7 @@ module.exports = app;
 
 async function updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy) {
   const url = `https://auto.miasolution.vn/rest/credentials/${credentialId}`;
-  console.log(axios, cookie, imei, userAgent, proxy);
+  console.error(axios, cookie, imei, userAgent, proxy);
   
   // The data to be sent in the request body
   const requestData = {
