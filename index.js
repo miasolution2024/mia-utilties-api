@@ -1,7 +1,6 @@
 const express = require("express");
 const ZCA = require("zca-js");
 const cors = require("cors");
-const serverless = require('serverless-http');
 const axios = require('axios');
 
 require('dotenv').config();
@@ -88,4 +87,4 @@ app.listen(PORT, () => {
   console.log(`Zalo QR API server is running at http://localhost:${PORT}`);
 });
 
-module.exports = serverless(app);
+module.exports = app;
