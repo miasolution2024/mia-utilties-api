@@ -1,9 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const ZCA = require("zca-js");
-const axios = require('axios');
+const axios = require("axios");
 
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
@@ -11,6 +11,10 @@ const PORT = process.env.PORT || 3001;
 const credentialId = process.env.CREDENTIAL_ID || "Pb7ykVjDjlguRbHv";
 const n8nCookie = process.env.N8N_COOKIE;
 const browserId = process.env.BROWSER_ID;
+
+app.get("/", async (req, res) => {
+   res.send("Hello world");
+});
 
 app.get("/qr-login", async (req, res) => {
   try {
@@ -59,7 +63,7 @@ app.get("/qr-login", async (req, res) => {
             const userAgent = qrEvent.data.userAgent || "";
             const proxy = qrEvent.data.proxy || "";
 
-            await updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy);
+            await updateN8nZaloCredential(cookie, imei, userAgent, proxy);
           }
           break;
 
@@ -67,6 +71,8 @@ app.get("/qr-login", async (req, res) => {
           console.error("Unknown QR event type:", qrEvent.type);
       }
     });
+
+    api.listener.start();
   } catch (error) {
     // Log the error for debugging purposes
     console.error("Error generating QR code:", error);
@@ -76,15 +82,12 @@ app.get("/qr-login", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Server ready on port 3000."));
+app.listen(PORT, () => console.log("Server ready on port 3001."));
 
-module.exports = app;
-
-async function updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy) {
+async function updateN8nZaloCredential(cookie, imei, userAgent, proxy) {
   const url = `https://auto.miasolution.vn/rest/credentials/${credentialId}`;
-  console.error(axios, cookie, imei, userAgent, proxy);
-  
-  // The data to be sent in the request body
+  console.error(cookie, imei, userAgent, proxy);
+
   const requestData = {
     name: "Zalo Đồng Võ Phòng Khám Thẩm Mỹ Donghan",
     type: "zaloUserCredentialsApi",
@@ -96,18 +99,16 @@ async function updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy) {
     },
   };
 
-  // The headers to be sent with the request
   const headers = {
     "browser-id": browserId,
     Cookie: n8nCookie,
   };
 
   try {
-    const response = await axios.patch(url, requestData, { headers });
+    await axios.patch(url, requestData, { headers });
     console.log("Update n8n credential successfully");
   } catch (error) {
     console.error("API call failed:", error.message);
   }
 }
 
-module.exports = app;
