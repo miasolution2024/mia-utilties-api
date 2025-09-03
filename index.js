@@ -2,6 +2,7 @@ const express = require("express");
 const ZCA = require("zca-js");
 const cors = require("cors");
 const serverless = require('serverless-http');
+const axios = require('axios');
 
 require('dotenv').config();
 
@@ -65,7 +66,7 @@ app.get("/qr-login", async (req, res) => {
             const userAgent = qrEvent.data.userAgent || "";
             const proxy = qrEvent.data.proxy || "";
 
-            await updateN8nZaloCredential(cookie, imei, userAgent, proxy);
+            await updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy);
           }
           break;
 
