@@ -88,4 +88,4 @@ app.listen(PORT, () => {
   console.log(`Zalo QR API server is running at http://localhost:${PORT}`);
 });
 
-module.exports.handler = serverless(app);
+module.exports = serverless(app);
