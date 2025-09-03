@@ -16,7 +16,7 @@ app.get("/qr-login", async (req, res) => {
   try {
     const zalo = new ZCA.Zalo();
     let api = await zalo.loginQR({}, async (qrEvent) => {
-      console.error(
+      console.log(
         "Received QR event type:",
         qrEvent ? qrEvent.type : "no event"
       );
@@ -25,11 +25,7 @@ app.get("/qr-login", async (req, res) => {
         case 0: // QRCodeGenerated
           if (qrEvent?.data?.image) {
             const qrCodeBase64 = qrEvent.data.image;
-            console.error("QR code generated, length:", qrCodeBase64.length);
-            // Set the content type header to image/png
-            // res.setHeader("Content-Type", "image/png");
-
-            // Send the image buffer as the response
+            console.log("QR code generated, length:", qrCodeBase64.length);
             res.send(qrCodeBase64);
           } else {
             console.error("Could not get QR code from Zalo SDK");
@@ -86,7 +82,8 @@ module.exports = app;
 
 async function updateN8nZaloCredential(axios, cookie, imei, userAgent, proxy) {
   const url = `https://auto.miasolution.vn/rest/credentials/${credentialId}`;
-
+  console.log(axios, cookie, imei, userAgent, proxy);
+  
   // The data to be sent in the request body
   const requestData = {
     name: "Zalo Đồng Võ Phòng Khám Thẩm Mỹ Donghan",
