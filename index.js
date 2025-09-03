@@ -1,6 +1,8 @@
 const express = require("express");
 const ZCA = require("zca-js");
 const cors = require("cors");
+const serverless = require('serverless-http');
+
 require('dotenv').config();
 
 
@@ -83,7 +85,6 @@ app.get("/qr-login", async (req, res) => {
 // Start the server and listen on the specified port
 app.listen(PORT, () => {
   console.log(`Zalo QR API server is running at http://localhost:${PORT}`);
-  console.log(
-    "You can access the QR code image at http://localhost:3001/qr-login"
-  );
 });
+
+module.exports.handler = serverless(app);
