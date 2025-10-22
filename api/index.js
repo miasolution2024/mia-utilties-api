@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const ZCA = require("zca-js");
-const axios = require("axios");
 const directusAxios = require("axios");
 const {
   getOmniChannelByPageId,
@@ -152,14 +151,6 @@ async function handleGotLoginInfo(context, event) {
       user_id: null,
       context: "handleGotLoginInfo",
     });
-    const n8nContext = {
-      directusAxios,
-      addIntegrationLog,
-      credentialId,
-      browserId,
-      n8nCookie,
-    };
-    await updateN8nZaloCredential(n8nContext, state);
   }
 }
 
@@ -172,6 +163,8 @@ async function AddOrCreateOmniChannel(context) {
 
     const settings = await getIntegrationSettings(context.directusAxios);
 
+    console.log('Found setting', settings.id);
+    
     const channelData = {
       zalo_cookie: JSON.stringify(context.state.cookie),
       zalo_imei: context.state.imei,
@@ -191,7 +184,9 @@ async function AddOrCreateOmniChannel(context) {
         proxy: context.state.proxy,
         pageName: context.state.page_name,
       });
-
+      
+      console.log('Addes N8nZaloCredential', credentialId);
+      
       const newChannel = await createOmniChannel(context.directusAxios, {
         page_id: context.api.getOwnId(),
         source: "Zalo",
@@ -220,9 +215,11 @@ async function AddOrCreateOmniChannel(context) {
         channelData
       );
 
+      console.log('Found existing omni channel:', existing.id);
+
       await updateN8nZaloCredential({
         n8nServerUrl,
-        credentialId: existing.n8n_zalo_credential_id,
+        credentialId: existing?.n8n_zalo_credential_id,
         browserId: settings?.n8n_browser_id || "",
         n8nCookie: settings?.n8n_cookie || "",
         cookie: context.state.cookie,
@@ -232,6 +229,8 @@ async function AddOrCreateOmniChannel(context) {
         pageName: context.state.page_name,
       });
 
+      console.log('Updated N8nZaloCredential', existing?.n8n_zalo_credential_id);
+      
       await addIntegrationLog(context.directusAxios, {
         timestamp: new Date().toISOString(),
         level: "info",
