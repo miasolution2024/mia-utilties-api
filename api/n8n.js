@@ -33,6 +33,7 @@ async function updateN8nZaloCredential({
     await axios.patch(url, requestData, { headers });
   } catch (error) {
     console.error("API call failed:", error.message);
+    throw error;
   }
 }
 

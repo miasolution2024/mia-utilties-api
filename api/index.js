@@ -24,8 +24,9 @@ app.get("/", async (req, res) => {
   res.send("Hello world");
 });
 
-app.get("/qr-login", async (req, res) => {
+app.get("/qr-login/:id", async (req, res) => {
   try {
+    const requestId = req.params.id;
     const zalo = new ZCA.Zalo();
     const state = {
       cookie: [],
@@ -33,6 +34,7 @@ app.get("/qr-login", async (req, res) => {
       userAgent: "",
       proxy: "",
       page_name: "",
+      requestId,
     };
 
     let api = await zalo.loginQR({}, async (qrEvent) => {
@@ -83,6 +85,7 @@ async function handleQrGenerated(context, event) {
         message: "QR code generated",
         stack_trace: JSON.stringify({ length: qrCodeBase64.length }),
         user_id: null,
+        request_string: context.state.requestId,
         context: "handleQrGenerated",
       });
     } catch (e) {
@@ -101,11 +104,12 @@ async function handleQrExpired(context) {
   const { directusAxios, addIntegrationLog } = context;
   await addIntegrationLog(directusAxios, {
     timestamp: new Date().toISOString(),
-    level: "info",
+    level: "error",
     message: "QR code expired. Please try again",
     stack_trace: "",
     user_id: null,
-    context: "handleQrExpired",
+    request_string: context.state.requestId,
+    context: "ZaloLoginWebsocketSilnal",
   });
 }
 
@@ -119,6 +123,7 @@ async function handleQrScanned(context, event) {
       message: "QR code expired. Please try again",
       stack_trace: JSON.stringify(context.state.page_name),
       user_id: null,
+      request_string: context.state.requestId,
       context: "handleQrScanned",
     });
   }
@@ -127,11 +132,12 @@ async function handleQrScanned(context, event) {
 async function handleQrDeclined(context) {
   await addIntegrationLog(directusAxios, {
     timestamp: new Date().toISOString(),
-    level: "info",
+    level: "error",
     message: "QR code declined. Please try again",
     stack_trace: JSON.stringify(context.state.page_name),
     user_id: null,
-    context: "handleQrDeclined",
+    request_string: context.state.requestId,
+    context: "ZaloLoginWebsocketSilnal",
   });
 }
 
@@ -149,6 +155,7 @@ async function handleGotLoginInfo(context, event) {
       message: "Got login info from Zalo",
       stack_trace: JSON.stringify(context.state.page_name),
       user_id: null,
+      request_string: context.state.requestId,
       context: "handleGotLoginInfo",
     });
   }
@@ -163,8 +170,8 @@ async function AddOrCreateOmniChannel(context) {
 
     const settings = await getIntegrationSettings(context.directusAxios);
 
-    console.log('Found setting', settings.id);
-    
+    console.log("Found setting", settings.id);
+
     const channelData = {
       zalo_cookie: JSON.stringify(context.state.cookie),
       zalo_imei: context.state.imei,
@@ -173,7 +180,6 @@ async function AddOrCreateOmniChannel(context) {
     };
 
     if (!omniChannels || omniChannels.length === 0) {
-
       const credentialId = await addN8nZaloCredential({
         n8nServerUrl,
         browserId: settings?.n8n_browser_id || "",
@@ -184,9 +190,9 @@ async function AddOrCreateOmniChannel(context) {
         proxy: context.state.proxy,
         pageName: context.state.page_name,
       });
-      
-      console.log('Addes N8nZaloCredential', credentialId);
-      
+
+      console.log("Addes N8nZaloCredential", credentialId);
+
       const newChannel = await createOmniChannel(context.directusAxios, {
         page_id: context.api.getOwnId(),
         source: "Zalo",
@@ -199,13 +205,14 @@ async function AddOrCreateOmniChannel(context) {
 
       await addIntegrationLog(context.directusAxios, {
         timestamp: new Date().toISOString(),
-        level: "info",
+        level: "success",
         message:
           "Omni channel created (from GOT LOGIN INFO) " +
           context.state.page_name,
         stack_trace: JSON.stringify(newChannel || {}),
         user_id: context.api.getOwnId(),
-        context: "createOmniChannel",
+        request_string: context.state.requestId,
+        context: "createdOmniChannel",
       });
     } else {
       const existing = omniChannels[0];
@@ -215,7 +222,7 @@ async function AddOrCreateOmniChannel(context) {
         channelData
       );
 
-      console.log('Found existing omni channel:', existing.id);
+      console.log("Found existing omni channel:", existing.id);
 
       await updateN8nZaloCredential({
         n8nServerUrl,
@@ -229,20 +236,42 @@ async function AddOrCreateOmniChannel(context) {
         pageName: context.state.page_name,
       });
 
-      console.log('Updated N8nZaloCredential', existing?.n8n_zalo_credential_id);
-      
+      console.log(
+        "Updated N8nZaloCredential",
+        existing?.n8n_zalo_credential_id
+      );
+
       await addIntegrationLog(context.directusAxios, {
         timestamp: new Date().toISOString(),
-        level: "info",
+        level: "success",
         message:
           "Omni channel updated (from GOT LOGIN INFO) " +
           context.state.page_name,
         stack_trace: JSON.stringify(updatedChannel || {}),
         user_id: context.api.getOwnId(),
-        context: "updateOmniChannel",
+        request_string: context.state.requestId,
+        context: "updatedOmniChannel",
       });
     }
+
+    await addIntegrationLog(context.directusAxios, {
+      timestamp: new Date().toISOString(),
+      level: "success",
+      message: "Login to zalo account " + context.state.page_name + ' successful',
+      user_id: context.api.getOwnId(),
+      request_string: context.state.requestId,
+      context: "ZaloLoginWebsocketSilnal",
+    });
   } catch (err) {
+
+     await addIntegrationLog(context.directusAxios, {
+      timestamp: new Date().toISOString(),
+      level: "error",
+      message: "Login to zalo account " + context.state.page_name + ' failed: ' + (err.message || err),
+      user_id: context.api.getOwnId(),
+      request_string: context.state.requestId,
+      context: "ZaloLoginWebsocketSilnal",
+    });
     console.error(
       "Failed to sync omni_channel after login info:",
       err.message || err
